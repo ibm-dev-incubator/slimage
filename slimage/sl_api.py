@@ -25,6 +25,7 @@ class SLImages(object):
         self.swift_username = swift_username
         self.sl_client = sl.create_client_from_env()
         self.images = sl.ImageManager(self.sl_client)
+        self.servers = sl.VSManager(self.sl_client)
         self.swift = client.Connection(authurl=swift_auth_url,
                                        user=swift_username,
                                        key=self.conf['api_key'])
@@ -43,5 +44,20 @@ class SLImages(object):
         uri_user = self.swift_username.split(':')[0]
         uri = 'swift://%s@%s/%s/%s' % (uri_user, cluster, container,
                                        object_name)
-        self.images.import_image_from_uri(image_name, uri, os_code=os_type,
-                                          note=desc)
+        return self.images.import_image_from_uri(image_name, uri,
+                                                 os_code=os_type, note=desc)
+
+    def create_server(self, hostname, datacenter='dal05', cpus=4,
+                      memory=16384, domain_name='slimage.org', ssh_keys=None,
+                      local_disk=True, disk_size=25, os_code=None,
+                      image_id=None):
+        if os_code and image_id:
+            raise Exception('An os_code and image_id are mutually exclusive')
+        if not os_code and not image_id:
+            raise Exception('An os_code or an image_id must be provided')
+
+        self.servers.create_instance(hostname=hostname,
+                                     domain=domain_name, local_disk=local_disk,
+                                     datacenter=datacenter, cpus=4,
+                                     memory=memory, disks=(str(disk_size)),
+                                     ssh_keys=ssh_keys, image_id=image_id)
