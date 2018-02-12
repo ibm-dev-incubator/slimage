@@ -22,6 +22,7 @@ default_swift_url = 'https://dal05.objectstorage.softlayer.net/auth/v1.0'
 class SLImages(object):
     def __init__(self, swift_username, swift_auth_url=default_swift_url):
         conf = config.get_client_settings_config_file()
+        self.swift_username = swift_username
         self.sl_client = sl.create_client_from_env()
         self.images = sl.ImageManager(self.sl_client)
         self.swift = client.Connection(authurl=swift_auth_url,
@@ -34,3 +35,9 @@ class SLImages(object):
 
     def upload_file(self, path, name, container):
         self.swift.put_object(container, name, contents=open(path, 'r'))
+
+    def create_image(self, image_name, object_name, cluster='dal05',
+                     desc=None):
+        uri = 'swift://%s@%s/slimage/%s' % (self.swift_username, cluster,
+                                            object_name)
+        self.images.import_image_from_uri(image_name, uri, note=desc)
